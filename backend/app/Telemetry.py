@@ -10,3 +10,5 @@ class Telemetry(SQLModel, table=True):
     metric: str = Field(max_length=100)
     value: float = Field()
     unit: str = Field(max_length=20)
+    sensor_id: int = Field( foreign_key="sensor.id")
+    data_kind: str | None = Field(default=None, max_length=50)
