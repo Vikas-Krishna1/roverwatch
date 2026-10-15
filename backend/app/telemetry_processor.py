@@ -23,10 +23,10 @@ def parse_rad_row(row: str) -> Telemetry:
     )
 def fetch_rad_data() -> str:
     url = (
-        "https://pds-geosciences.wustl.edu/insight/"
-        "urn-nasa-pds-insight_rad/data_calibrated/"
-        "hp3_rad_cal_00746_20210101_072936.tab"
-    )
+    "https://pds-geosciences.wustl.edu/insight/"
+    "urn-nasa-pds-insight_rad/data_calibrated/"
+    "hp3_rad_cal_00746_20210101_072936.tab"
+)
 
     response = httpx.get(url, timeout=30.0)
     response.raise_for_status()

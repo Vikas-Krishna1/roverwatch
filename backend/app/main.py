@@ -9,6 +9,8 @@ from .Alert import Alert
 from .ThresholdRule import ThresholdRule
 from .sensor_data_mapping import SensorDataMapping
 from .DataSource import DataSource
+from .IngestionRun import IngestionRun
+from .RejectedRecord import RejectedRecord
 
 app = FastAPI(title="RoverWatch API")
 

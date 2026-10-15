@@ -11,4 +11,5 @@ class IngestionRun(SQLModel, table=True):
     source_url: str
     accepted_count: int = Field(default=0)
     rejected_count: int = Field(default=0)
+    skipped_count: int = Field(default=0)
     status: str = Field(default="running")
