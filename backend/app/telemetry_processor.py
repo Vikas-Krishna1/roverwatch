@@ -10,6 +10,10 @@ class Telemetry(SQLModel):
 
 def parse_rad_row(row: str) -> Telemetry:
     fields = row.split()
+    if len(fields) != 39:
+        raise ValueError(
+        f"Expected 39 fields, got {len(fields)}"
+    )
 
     return Telemetry(
         timestamp=datetime.fromisoformat(fields[0]),

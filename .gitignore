@@ -1,0 +1,6 @@
+#Ignore .db files
+.*.db
+#Ignore .sqlite files
+*.sqlite
+#Ignore .env
+.env
