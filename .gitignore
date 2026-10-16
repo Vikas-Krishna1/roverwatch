@@ -1,6 +1,14 @@
-#Ignore .db files
-.*.db
-#Ignore .sqlite files
+# Python
+__pycache__/
+*.py[cod]
+
+# Virtual environment
+.venv/
+
+# Database files
+*.db
 *.sqlite
-#Ignore .env
+*.sqlite3
+
+# Environment variables
 .env

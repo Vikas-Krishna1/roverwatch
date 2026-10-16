@@ -1,8 +1,8 @@
 from sqlmodel import Session, select
 
-from .Telemetry import Telemetry
-from .ThresholdRule import ThresholdRule
-from .Alert import Alert
+from ..models.Telemetry import Telemetry
+from ..models.ThresholdRule import ThresholdRule
+from ..models.Alert import Alert
 
 
 def evaluate_telemetry(

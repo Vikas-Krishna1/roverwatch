@@ -1,10 +1,10 @@
 from sqlmodel import Session, select
 
 from app.database import engine
-from app.DataSource import DataSource
-from app.Sensor import Sensor
-from app.sensor_data_mapping import SensorDataMapping
-from .Component import Component
+from ..models.DataSource import DataSource
+from ..models.Sensor import Sensor
+from ..models.sensor_data_mapping import SensorDataMapping
+from ..models.Component import Component
 
 
 NASA_URL = (

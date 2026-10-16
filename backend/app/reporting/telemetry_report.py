@@ -3,8 +3,8 @@ from sqlmodel import Session, select
 from sqlalchemy import case, func
 
 from app.database import engine
-from app.Sensor import Sensor
-from app.Telemetry import Telemetry
+from ..models.Sensor import Sensor
+from ..models.Telemetry import Telemetry
 
 
 def summarize_sensor_readings(

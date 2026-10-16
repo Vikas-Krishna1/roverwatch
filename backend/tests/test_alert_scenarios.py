@@ -1,15 +1,15 @@
 from datetime import datetime, timezone
 
 from sqlmodel import SQLModel, Session, create_engine, select
-from app.ThresholdRule import ThresholdRule
-from app.Component import Component
-from app.Sensor import Sensor
-from app.rover import Rover
-from app.Alert import Alert
-from app.Sensor import Sensor
-from app.Telemetry import Telemetry
-from app.ThresholdRule import ThresholdRule
-from app.alert_service import evaluate_telemetry
+from app.models.ThresholdRule import ThresholdRule
+from app.models.Component import Component
+from app.models.Sensor import Sensor
+from app.models.rover import Rover
+from app.models.Alert import Alert
+from app.models.Sensor import Sensor
+from app.models.Telemetry import Telemetry
+from app.models.ThresholdRule import ThresholdRule
+from app.services.alert_service import evaluate_telemetry
 
 
 # Isolated, temporary in-memory database.

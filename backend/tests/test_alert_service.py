@@ -1,9 +1,9 @@
 from sqlmodel import Session, select
 
 from app.database import engine
-from app.Telemetry import Telemetry
-from app.Alert import Alert
-from app.alert_service import evaluate_telemetry
+from app.models.Telemetry import Telemetry
+from app.models.Alert import Alert
+from app.services.alert_service import evaluate_telemetry
 
 
 with Session(engine) as session:

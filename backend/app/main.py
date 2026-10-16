@@ -1,22 +1,22 @@
 from fastapi import FastAPI
 from sqlmodel import SQLModel
 from .database import engine
-from .Telemetry import Telemetry
-from .rover import Rover
-from .Component import Component
-from .Sensor import Sensor
-from .Alert import Alert
-from .ThresholdRule import ThresholdRule, ThresholdRuleCreate
-from .sensor_data_mapping import SensorDataMapping
-from .DataSource import DataSource
-from .IngestionRun import IngestionRun
-from .RejectedRecord import RejectedRecord
+from .models.Telemetry import Telemetry
+from .models.rover import Rover
+from .models.Component import Component
+from .models.Sensor import Sensor
+from .models.Alert import Alert
+from .models.ThresholdRule import ThresholdRule, ThresholdRuleCreate
+from .models.sensor_data_mapping import SensorDataMapping
+from .models.DataSource import DataSource
+from .models.IngestionRun import IngestionRun
+from .models.RejectedRecord import RejectedRecord
 from fastapi import Query, HTTPException
 from sqlalchemy import func
 from sqlmodel import Session, select
-from .telemetry_report import summarize_sensor_readings
-from .setup_nasa_source import setup_nasa_source
-from .ingestion_service import ingest_nasa_rad_data
+from .reporting.telemetry_report import summarize_sensor_readings
+from .ingestion.setup_nasa_source import setup_nasa_source
+from .services.ingestion_service import ingest_nasa_rad_data
 
 app = FastAPI(title="RoverWatch API")
 

@@ -1,8 +1,8 @@
 from sqlmodel import Session, select
 from app.database import engine
-from app.IngestionRun import IngestionRun
-from app.RejectedRecord import RejectedRecord
-from app.telemetry_processor import parse_rad_row
+from app.models.IngestionRun import IngestionRun
+from app.models.RejectedRecord import RejectedRecord
+from app.ingestion.telemetry_processor import parse_rad_row
 
 
 malformed_row = "this is a deliberately malformed row"

@@ -1,14 +1,14 @@
 from sqlmodel import Session, select
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from app.database import engine
-from app.IngestionRun import IngestionRun
-from app.RejectedRecord import RejectedRecord
-from app.Sensor import Sensor
-from app.DataSource import DataSource
-from app.sensor_data_mapping import SensorDataMapping
-from app.Telemetry import Telemetry as DBTelemetry
-from app.alert_service import evaluate_telemetry
-from app.telemetry_processor import (
+from ..models.IngestionRun import IngestionRun
+from ..models.RejectedRecord import RejectedRecord
+from ..models.Sensor import Sensor
+from ..models.DataSource import DataSource
+from ..models.sensor_data_mapping import SensorDataMapping
+from ..models.Telemetry import Telemetry as DBTelemetry
+from ..services.alert_service import evaluate_telemetry
+from ..ingestion.telemetry_processor import (
     fetch_rad_data,
     parse_rad_row,
 )
