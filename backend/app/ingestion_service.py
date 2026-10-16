@@ -7,6 +7,7 @@ from app.Sensor import Sensor
 from app.DataSource import DataSource
 from app.sensor_data_mapping import SensorDataMapping
 from app.Telemetry import Telemetry as DBTelemetry
+from app.alert_service import evaluate_telemetry
 from app.telemetry_processor import (
     fetch_rad_data,
     parse_rad_row,
@@ -104,12 +105,28 @@ def ingest_nasa_rad_data() -> int:
                                 "metric",
                             ]
                         )
+                        .returning(DBTelemetry.id)
                     )
 
-                    result = session.exec(statement)
+                    result = session.execute(statement)
+                    telemetry_id = result.scalar_one_or_none()
 
-                    if result.rowcount == 1:
+                    if telemetry_id is not None:
                         accepted += 1
+
+                        telemetry = session.get(
+                            DBTelemetry,
+                            telemetry_id,
+                        )
+
+                        if telemetry is None:
+                            raise RuntimeError(
+                                f"Inserted telemetry {telemetry_id} "
+                                "could not be retrieved."
+                            )
+
+                        evaluate_telemetry(telemetry, session)
+
                     else:
                         skipped += 1
 
