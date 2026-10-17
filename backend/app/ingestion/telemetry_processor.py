@@ -1,24 +1,35 @@
 from datetime import datetime
 from sqlmodel import SQLModel, Field
 import httpx
-RAD_SENSOR_1A_TEMPERATURE_INDEX = 15
+RAD_SENSOR_TEMPERATURE_FIELDS={
+    "TB Sensor 1A": 15,
+    "TB Sensor 1B": 16,
+    "TB Sensor 1C": 17,
+    "TB Sensor 2A": 18,
+    "TB Sensor 2B": 19,
+    "TB Sensor 2C": 20,
+}
 class Telemetry(SQLModel):
     timestamp: datetime = Field(default_factory=datetime.utcnow)
     metric: str
     value: float
     unit: str
 
-def parse_rad_row(row: str) -> Telemetry:
+def parse_rad_row(
+    row: str,
+    metric: str,
+) -> Telemetry:
     fields = row.split()
+
     if len(fields) != 39:
         raise ValueError(
-        f"Expected 39 fields, got {len(fields)}"
-    )
+            f"Expected 39 fields, got {len(fields)}"
+        )
 
     return Telemetry(
         timestamp=datetime.fromisoformat(fields[0]),
-        metric="TB Sensor 1A",
-        value=float(fields[RAD_SENSOR_1A_TEMPERATURE_INDEX]),
+        metric=metric,
+        value=float(fields[RAD_SENSOR_TEMPERATURE_FIELDS[metric]]),
         unit="K",
     )
 def fetch_rad_data() -> str:
@@ -39,7 +50,10 @@ def parse_rad_data(data: str) -> list[Telemetry]:
         if not row.strip():
             continue
 
-        readings.append(parse_rad_row(row))
+        for metric in RAD_SENSOR_TEMPERATURE_FIELDS:
+            readings.append(
+                parse_rad_row(row, metric)
+            )
 
     return readings
 

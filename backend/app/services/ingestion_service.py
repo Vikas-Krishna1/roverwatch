@@ -1,5 +1,6 @@
 from sqlmodel import Session, select
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
+
 from app.database import engine
 from ..models.IngestionRun import IngestionRun
 from ..models.RejectedRecord import RejectedRecord
@@ -9,6 +10,7 @@ from ..models.sensor_data_mapping import SensorDataMapping
 from ..models.Telemetry import Telemetry as DBTelemetry
 from ..services.alert_service import evaluate_telemetry
 from ..ingestion.telemetry_processor import (
+    RAD_SENSOR_TEMPERATURE_FIELDS,
     fetch_rad_data,
     parse_rad_row,
 )
@@ -19,6 +21,8 @@ NASA_URL = (
     "urn-nasa-pds-insight_rad/data_calibrated/"
     "hp3_rad_cal_00746_20210101_072936.tab"
 )
+
+
 def mark_run_failed(run_id: int) -> None:
     """Mark an ingestion run as failed."""
     with Session(engine) as session:
@@ -35,7 +39,10 @@ def ingest_nasa_rad_data() -> int:
 
     # Create a record before attempting the download.
     with Session(engine) as session:
-        run = IngestionRun(source_url=NASA_URL, status="running")
+        run = IngestionRun(
+            source_url=NASA_URL,
+            status="running",
+        )
         session.add(run)
         session.commit()
         session.refresh(run)
@@ -47,11 +54,21 @@ def ingest_nasa_rad_data() -> int:
         data = fetch_rad_data()
 
         with Session(engine) as session:
-            sensor = session.exec(
-                select(Sensor).where(
-                    Sensor.name == "InSight TB Sensor 1A"
-                )
-            ).first()
+            sensors = {}
+
+            for metric in RAD_SENSOR_TEMPERATURE_FIELDS:
+                sensor = session.exec(
+                    select(Sensor).where(
+                        Sensor.name == f"InSight {metric}"
+                    )
+                ).first()
+
+                if sensor is None:
+                    raise ValueError(
+                        f"NASA sensor setup is missing for {metric}."
+                    )
+
+                sensors[metric] = sensor
 
             source = session.exec(
                 select(DataSource).where(
@@ -59,76 +76,93 @@ def ingest_nasa_rad_data() -> int:
                 )
             ).first()
 
-            if sensor is None or source is None:
+            if source is None:
                 raise ValueError(
-                    "NASA source or sensor setup is missing."
+                    "NASA data source setup is missing."
                 )
 
-            mapping = session.exec(
-                select(SensorDataMapping).where(
-                    SensorDataMapping.sensor_id == sensor.id,
-                    SensorDataMapping.data_source_id == source.id,
-                    SensorDataMapping.source_field == "TB Sensor 1A",
-                )
-            ).first()
+            mappings = {}
 
-            if mapping is None:
-                raise ValueError("NASA sensor mapping is missing.")
+            for metric, sensor in sensors.items():
+                mapping = session.exec(
+                    select(SensorDataMapping).where(
+                        SensorDataMapping.sensor_id == sensor.id,
+                        SensorDataMapping.data_source_id == source.id,
+                        SensorDataMapping.source_field == metric,
+                    )
+                ).first()
+
+                if mapping is None:
+                    raise ValueError(
+                        f"NASA sensor mapping is missing for {metric}."
+                    )
+
+                mappings[metric] = mapping
 
             accepted = 0
             rejected = 0
             skipped = 0
 
             for row_number, raw_row in enumerate(
-                data.splitlines(), start=1
+                data.splitlines(),
+                start=1,
             ):
                 if not raw_row.strip():
                     continue
 
                 try:
-                    reading = parse_rad_row(raw_row)
-
-                    statement = (
-                        sqlite_insert(DBTelemetry)
-                        .values(
-                            timestamp=reading.timestamp,
-                            metric=reading.metric,
-                            value=reading.value,
-                            unit=reading.unit,
-                            sensor_id=sensor.id,
-                            data_kind="NASA PDS archive",
-                        )
-                        .on_conflict_do_nothing(
-                            index_elements=[
-                                "sensor_id",
-                                "timestamp",
-                                "metric",
-                            ]
-                        )
-                        .returning(DBTelemetry.id)
-                    )
-
-                    result = session.execute(statement)
-                    telemetry_id = result.scalar_one_or_none()
-
-                    if telemetry_id is not None:
-                        accepted += 1
-
-                        telemetry = session.get(
-                            DBTelemetry,
-                            telemetry_id,
+                    for metric in RAD_SENSOR_TEMPERATURE_FIELDS:
+                        reading = parse_rad_row(
+                            raw_row,
+                            metric,
                         )
 
-                        if telemetry is None:
-                            raise RuntimeError(
-                                f"Inserted telemetry {telemetry_id} "
-                                "could not be retrieved."
+                        sensor = sensors[metric]
+
+                        statement = (
+                            sqlite_insert(DBTelemetry)
+                            .values(
+                                timestamp=reading.timestamp,
+                                metric=reading.metric,
+                                value=reading.value,
+                                unit=reading.unit,
+                                sensor_id=sensor.id,
+                                data_kind="NASA PDS archive",
+                            )
+                            .on_conflict_do_nothing(
+                                index_elements=[
+                                    "sensor_id",
+                                    "timestamp",
+                                    "metric",
+                                ]
+                            )
+                            .returning(DBTelemetry.id)
+                        )
+
+                        result = session.execute(statement)
+                        telemetry_id = result.scalar_one_or_none()
+
+                        if telemetry_id is not None:
+                            accepted += 1
+
+                            telemetry = session.get(
+                                DBTelemetry,
+                                telemetry_id,
                             )
 
-                        evaluate_telemetry(telemetry, session)
+                            if telemetry is None:
+                                raise RuntimeError(
+                                    f"Inserted telemetry {telemetry_id} "
+                                    "could not be retrieved."
+                                )
 
-                    else:
-                        skipped += 1
+                            evaluate_telemetry(
+                                telemetry,
+                                session,
+                            )
+
+                        else:
+                            skipped += 1
 
                 except (ValueError, TypeError, IndexError) as exc:
                     session.add(
@@ -141,7 +175,10 @@ def ingest_nasa_rad_data() -> int:
                     )
                     rejected += 1
 
-            run = session.get(IngestionRun, run_id)
+            run = session.get(
+                IngestionRun,
+                run_id,
+            )
 
             if run is None:
                 raise ValueError(
@@ -166,6 +203,7 @@ def ingest_nasa_rad_data() -> int:
     print(f"Completed ingestion run {run_id}")
 
     return run_id
+
 
 if __name__ == "__main__":
     ingest_nasa_rad_data()
